@@ -190,10 +190,11 @@ function SettingsPage() {
 												<Label htmlFor="frequency">Email Frequency</Label>
 												<select
 													id="frequency"
+													defaultValue="weekly"
 													className="w-full h-10 px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900"
 												>
 													<option value="daily">Daily</option>
-													<option value="weekly" selected>
+													<option value="weekly">
 														Weekly
 													</option>
 													<option value="monthly">Monthly</option>
