@@ -1,8 +1,10 @@
 "use client";
 
 // Imports - Node
-import { useState } from "react";
-import { Search, Plus, Loader2 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Search, Plus, Loader2, Send } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 // Imports - Local
 import MovieCard from "@/components/movie-card";
@@ -11,6 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getMovieRecommendations } from "@/lib/ai-recommendations";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Sample movie data (would be replaced by actual API data)
 const sampleMovies = [
@@ -64,10 +69,37 @@ const sampleMovies = [
 	},
 ];
 
+type Message = {
+	id: string;
+	content: string;
+	role: "user" | "assistant";
+	timestamp: Date;
+};
+
 function RecommendationsPage() {
 	const [searchQuery, setSearchQuery] = useState("");
-	const [isLoading, setIsLoading] = useState(false);
-	const [recommendations, setRecommendations] = useState<any[]>([]);
+	const [isLoading, setIsLoading] = useState(false);	const [recommendations, setRecommendations] = useState<any[]>([]);
+	const [chatMessage, setChatMessage] = useState("");
+	const [chatHistory, setChatHistory] = useState<Message[]>([		{
+			id: "welcome-message",
+			content:
+				"Merhaba! Ben sizin film öneri asistanınızım. Sevdiğiniz filmler, izlemek istediğiniz türler veya aradığınız tarzda film önerileri hakkında bana bilgi verebilirsiniz. Size özel film önerileri sunmaktan memnuniyet duyarım!",
+			role: "assistant",
+			timestamp: new Date(),
+		},
+	]);
+	const [isChatLoading, setIsChatLoading] = useState(false);
+	const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+	// Auto-scroll to bottom when new messages arrive
+	useEffect(() => {
+		if (scrollAreaRef.current) {
+			const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+			if (scrollContainer) {
+				scrollContainer.scrollTop = scrollContainer.scrollHeight;
+			}
+		}
+	}, [chatHistory, isChatLoading]);
 
 	const handleSearch = async () => {
 		if (!searchQuery.trim()) return;
@@ -82,6 +114,76 @@ function RecommendationsPage() {
 			setIsLoading(false);
 		}
 	};
+	const handleChatSubmit = async () => {
+		if (!chatMessage.trim()) return;
+
+		// Add user message to chat history
+		const userMessage: Message = {
+			id: Date.now().toString(),
+			content: chatMessage,
+			role: "user",
+			timestamp: new Date(),
+		};
+
+		setChatHistory((prev) => [...prev, userMessage]);
+		const currentMessage = chatMessage;
+		setChatMessage("");
+		setIsChatLoading(true);
+
+		try {
+			// Film RAG sistemine özel olarak yapılandırılmış prompt
+			const systemPrompt = "Sen bir film uzmanısın. Sadece filmler, yönetmenler, oyuncular, film türleri, film önerileri ve genel sinema bilgisi hakkında konuşabilirsin. Diğer konularla ilgili sorulara cevap vermemen gerekiyor. Kullanıcılara mümkün olduğunca yardımcı olmaya çalış ve sohbet ettiğin kişinin film zevkine göre özelleştirilmiş öneriler sun.";
+			
+			const response = await fetch("http://localhost:11434/api/generate", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					model: "llama3:latest",
+					prompt: `${systemPrompt}\n\nKullanıcı: ${currentMessage}`,
+					stream: false,
+				}),
+			});
+
+			if (!response.ok) {
+				throw new Error("Model yanıt vermedi");
+			}
+
+			const data = await response.json();
+			
+			const assistantMessage: Message = {
+				id: Date.now().toString(),
+				content: data.response || "Üzgünüm, film önerisi oluşturamadım. Lütfen tekrar deneyin.",
+				role: "assistant",
+				timestamp: new Date(),
+			};
+			
+			setChatHistory((prev) => [...prev, assistantMessage]);
+			
+			// Eğer film önerisi içeriyorsa, arama sonuçlarını da göster
+			if (currentMessage.toLowerCase().includes("film") || 
+				currentMessage.toLowerCase().includes("movie") ||
+				currentMessage.toLowerCase().includes("öneri") ||
+				currentMessage.toLowerCase().includes("recommend")) {
+				setSearchQuery(currentMessage);
+				handleSearch();
+			}
+		} catch (error) {
+			console.error("Chat yanıtı alınırken hata:", error);
+			
+			const errorMessage: Message = {
+				id: Date.now().toString(),
+				content: "Üzgünüm, bir hata oluştu. Ollama modelinizin çalıştığından emin olun.",
+				role: "assistant",
+				timestamp: new Date(),
+			};
+			
+			setChatHistory((prev) => [...prev, errorMessage]);
+		} finally {
+			setIsChatLoading(false);
+		}
+	};
 
 	return (
 		<div className="min-h-screen flex justify-center bg-white text-gray-900">
@@ -91,9 +193,12 @@ function RecommendationsPage() {
 				</h1>
 
 				<Tabs defaultValue="search" className="w-full">
-					<TabsList className="grid w-full grid-cols-2 bg-gray-100 rounded-lg p-1">
+					<TabsList className="grid w-full grid-cols-3 bg-gray-100 rounded-lg p-1">
 						<TabsTrigger value="search" className="data-[state=active]:bg-white">
 							Search
+						</TabsTrigger>
+						<TabsTrigger value="chat" className="data-[state=active]:bg-white">
+							Chat
 						</TabsTrigger>
 						<TabsTrigger value="guided" className="data-[state=active]:bg-white">
 							Guided
@@ -116,6 +221,157 @@ function RecommendationsPage() {
 								Find Movies
 							</Button>
 						</div>
+					</TabsContent>
+
+					<TabsContent value="chat" className="mt-6">
+						<Card className="bg-white border-gray-200">
+							<CardContent className="p-6">
+								<ScrollArea ref={scrollAreaRef} className="h-[400px] pr-4 mb-4">
+									<div className="space-y-4">
+										{chatHistory.map((message) => (
+											<div
+												key={message.id}
+												className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+											>
+												<div
+													className={`flex gap-3 max-w-[80%] ${
+														message.role === "user" ? "flex-row-reverse" : "flex-row"
+													}`}
+												>
+													<Avatar className="h-8 w-8 bg-gradient-to-r from-purple-600 to-cyan-600">
+														<div className="text-white text-xs font-bold">
+															{message.role === "user" ? "ME" : "AI"}
+														</div>
+													</Avatar>
+													<div
+														className={`rounded-lg px-4 py-2 text-sm ${
+															message.role === "user"
+																? "bg-gradient-to-r from-purple-600 to-cyan-600 text-white"
+																: "bg-gray-100 text-gray-800"
+														}`}
+													>
+														{message.role === "assistant" ? (
+															<div className="markdown-wrapper">
+																<style jsx>{`
+																	.markdown-wrapper :global(p) {
+																		margin-bottom: 0.75rem;
+																	}
+																	.markdown-wrapper :global(p:last-child) {
+																		margin-bottom: 0;
+																	}
+																	.markdown-wrapper :global(strong) {
+																		font-weight: 700;
+																	}
+																	.markdown-wrapper :global(em) {
+																		font-style: italic;
+																	}
+																	.markdown-wrapper :global(h1) {
+																		font-size: 1.25rem;
+																		font-weight: 700;
+																		margin-top: 1rem;
+																		margin-bottom: 0.5rem;
+																	}
+																	.markdown-wrapper :global(h2) {
+																		font-size: 1.15rem;
+																		font-weight: 600;
+																		margin-top: 0.75rem;
+																		margin-bottom: 0.5rem;
+																	}
+																	.markdown-wrapper :global(h3, h4, h5, h6) {
+																		font-size: 1rem;
+																		font-weight: 600;
+																		margin-top: 0.5rem;
+																		margin-bottom: 0.25rem;
+																	}
+																	.markdown-wrapper :global(ul, ol) {
+																		margin: 0.5rem 0;
+																		padding-left: 1.5rem;
+																	}
+																	.markdown-wrapper :global(ul) {
+																		list-style-type: disc;
+																	}
+																	.markdown-wrapper :global(ol) {
+																		list-style-type: decimal;
+																	}
+																	.markdown-wrapper :global(li) {
+																		margin-bottom: 0.25rem;
+																	}
+																	.markdown-wrapper :global(a) {
+																		color: #6366f1;
+																		text-decoration: underline;
+																	}
+																	.markdown-wrapper :global(code) {
+																		font-family: monospace;
+																		background-color: rgba(0, 0, 0, 0.05);
+																		padding: 0.125rem 0.25rem;
+																		border-radius: 0.25rem;
+																	}
+																	.markdown-wrapper :global(blockquote) {
+																		border-left: 3px solid #9333ea;
+																		padding-left: 0.75rem;
+																		font-style: italic;
+																		margin: 0.5rem 0;
+																	}
+																`}</style>
+																<ReactMarkdown 
+																	remarkPlugins={[remarkGfm]}
+																>
+																	{message.content}
+																</ReactMarkdown>
+															</div>
+														) : (
+															message.content
+														)}
+													</div>
+												</div>
+											</div>
+										))}
+										{isChatLoading && (
+											<div className="flex justify-start">
+												<div className="flex gap-3">
+													<Avatar className="h-8 w-8 bg-gradient-to-r from-purple-600 to-cyan-600">
+														<div className="text-white text-xs font-bold">AI</div>
+													</Avatar>
+													<div className="rounded-lg px-4 py-2 bg-gray-100 text-gray-800">
+														<Loader2 className="h-4 w-4 animate-spin" />
+													</div>
+												</div>
+											</div>
+										)}
+									</div>
+								</ScrollArea>
+								<div className="flex flex-col gap-2">
+									<div className="relative">
+										<Textarea
+											placeholder="Ask about movies or describe what you're looking for..."
+											className="resize-none min-h-[80px] bg-white border-gray-300 pr-12"
+											value={chatMessage}
+											onChange={(e) => setChatMessage(e.target.value)}
+											onKeyDown={(e) => {
+												if (e.key === "Enter" && !e.shiftKey) {
+													e.preventDefault();
+													handleChatSubmit();
+												}
+											}}
+										/>
+										<Button
+											onClick={handleChatSubmit}
+											className="absolute bottom-2 right-2 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 h-8 w-8 p-0 rounded-full"
+											disabled={isChatLoading || !chatMessage.trim()}
+										>
+											{isChatLoading ? (
+												<Loader2 className="h-4 w-4 animate-spin" />
+											) : (
+												<Send className="h-4 w-4" />
+											)}
+										</Button>
+									</div>
+									<p className="text-xs text-gray-500 italic">
+										Press Enter to send, Shift+Enter for a new line. The AI will respond with suggestions for movies based on your interests.
+									</p>
+								</div>
+							</CardContent>
+						</Card>
 					</TabsContent>
 
 					<TabsContent value="guided" className="mt-6">
