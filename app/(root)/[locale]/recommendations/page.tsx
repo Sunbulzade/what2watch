@@ -6,6 +6,8 @@ import { Search, Plus, Loader2 } from "lucide-react";
 
 // Imports - Local
 import MovieCard from "@/components/movie-card";
+import ChatInterface from "@/components/chat-interface";
+import OllamaStatus from "@/components/ollama-status";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -68,6 +70,8 @@ function RecommendationsPage() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [recommendations, setRecommendations] = useState<any[]>([]);
+	const [activeChat, setActiveChat] = useState(false);
+	const [currentChatQuery, setCurrentChatQuery] = useState("");
 
 	const handleSearch = async () => {
 		if (!searchQuery.trim()) return;
@@ -76,6 +80,9 @@ function RecommendationsPage() {
 		try {
 			const results = await getMovieRecommendations(searchQuery);
 			setRecommendations(results);
+			// Start chat with the same query
+			setCurrentChatQuery(searchQuery);
+			setActiveChat(true);
 		} catch (error) {
 			console.error("Error getting recommendations:", error);
 		} finally {
@@ -90,6 +97,8 @@ function RecommendationsPage() {
 					Movie Recommendations
 				</h1>
 
+				<OllamaStatus />
+
 				<Tabs defaultValue="search" className="w-full">
 					<TabsList className="grid w-full grid-cols-2 bg-gray-100 rounded-lg p-1">
 						<TabsTrigger value="search" className="data-[state=active]:bg-white">
@@ -101,12 +110,17 @@ function RecommendationsPage() {
 					</TabsList>
 
 					<TabsContent value="search" className="mt-6">
-						<div className="flex gap-2 mb-8">
+						<div className="flex gap-2 mb-4">
 							<Input
 								placeholder="Enter movies, genres, or directors you like..."
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
 								className="bg-white border-gray-300"
+								onKeyDown={(e) => {
+									if (e.key === "Enter" && !isLoading) {
+										handleSearch();
+									}
+								}}
 							/>
 							<Button
 								onClick={handleSearch}
@@ -116,6 +130,28 @@ function RecommendationsPage() {
 								Find Movies
 							</Button>
 						</div>
+
+						{activeChat && (
+							<div className="mt-4 mb-8 transition-all duration-300 ease-in-out">
+								<div className="mb-3 flex justify-between items-center">
+									<div>
+										<h3 className="text-lg font-medium text-gray-800">Local AI Chat Assistant</h3>
+										<p className="text-xs text-gray-500">
+											Using Ollama models from your computer. Make sure Ollama is running.
+										</p>
+									</div>
+									<Button 
+										variant="ghost" 
+										size="sm" 
+										onClick={() => setActiveChat(false)}
+										className="text-gray-500 hover:text-gray-800"
+									>
+										Hide Chat
+									</Button>
+								</div>
+								<ChatInterface initialQuery={currentChatQuery} />
+							</div>
+						)}
 					</TabsContent>
 
 					<TabsContent value="guided" className="mt-6">
@@ -167,12 +203,42 @@ function RecommendationsPage() {
 										</div>
 									</div>
 
-									<Button className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">
+									<Button 
+										className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
+										onClick={() => {
+											// Here you would typically process the guided selections
+											// For now, we'll just activate the chat
+											setCurrentChatQuery("I like the genres of Action, Sci-Fi and movies like Inception and The Matrix");
+											setActiveChat(true);
+										}}
+									>
 										Generate Recommendations
 									</Button>
 								</div>
 							</CardContent>
 						</Card>
+						
+						{activeChat && (
+							<div className="mt-4 mb-4 transition-all duration-300 ease-in-out">
+								<div className="mb-3 flex justify-between items-center">
+									<div>
+										<h3 className="text-lg font-medium text-gray-800">Local AI Chat Assistant</h3>
+										<p className="text-xs text-gray-500">
+											Using Ollama models from your computer. Make sure Ollama is running.
+										</p>
+									</div>
+									<Button 
+										variant="ghost" 
+										size="sm" 
+										onClick={() => setActiveChat(false)}
+										className="text-gray-500 hover:text-gray-800"
+									>
+										Hide Chat
+									</Button>
+								</div>
+								<ChatInterface initialQuery={currentChatQuery} />
+							</div>
+						)}
 					</TabsContent>
 				</Tabs>
 
