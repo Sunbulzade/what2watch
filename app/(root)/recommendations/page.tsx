@@ -132,7 +132,7 @@ function RecommendationsPage() {
 
 		try {
 			// Film RAG sistemine özel olarak yapılandırılmış prompt
-			const systemPrompt = "Sen bir film uzmanısın. Sadece filmler, yönetmenler, oyuncular, film türleri, film önerileri ve genel sinema bilgisi hakkında konuşabilirsin. Diğer konularla ilgili sorulara cevap vermemen gerekiyor. Kullanıcılara mümkün olduğunca yardımcı olmaya çalış ve sohbet ettiğin kişinin film zevkine göre özelleştirilmiş öneriler sun.";
+			const systemPrompt = "You are a movie expert. You can only talk about films, directors, actors, film genres, movie recommendations, and general cinema knowledge. You must not respond to questions unrelated to these topics. Try to help users as much as possible and offer personalized recommendations based on the user's movie preferences. Please respond only in English.";
 			
 			const response = await fetch("http://localhost:11434/api/generate", {
 				method: "POST",
