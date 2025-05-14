@@ -1,16 +1,13 @@
 "use client";
 
 // Imports - Node
+import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Home, Search, Film, User, Menu, X, LogIn } from "lucide-react";
 
 // Imports - Local
-import { Link } from "@/lib/i18n/routing";
 import { Button } from "@/components/ui/button";
-
-// Import Types - Local
-import type { Pathnames } from "@/lib/i18n/routing";
 
 export default function Navbar() {
 	const pathname = usePathname();
@@ -25,7 +22,7 @@ export default function Navbar() {
 		return pathname === path;
 	};
 
-	const navItems: { name: string; path: Pathnames; icon: React.ReactNode; }[] = [
+	const navItems: { name: string; path: string; icon: React.ReactNode; }[] = [
 		{ name: "Home", path: "/", icon: <Home className="h-5 w-5" /> },
 		{ name: "Recommendations", path: "/recommendations", icon: <Search className="h-5 w-5" /> },
 		{ name: "Movies", path: "/movies", icon: <Film className="h-5 w-5" /> },

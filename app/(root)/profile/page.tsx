@@ -1,13 +1,13 @@
 "use client";
 
 // Imports - Node
+import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { Film, Heart, Clock, Settings, BarChart } from "lucide-react";
 
 // Imports - Local
 import MovieCard from "@/components/movie-card";
-import { Link } from "@/lib/i18n/routing";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

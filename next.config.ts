@@ -1,6 +1,3 @@
-// Imports - Node
-import createNextIntlPlugin from "next-intl/plugin";
-
 // Import Types - Node
 import type { NextConfig } from "next";
 
@@ -14,7 +11,5 @@ const nextConfig: NextConfig = {
 	}
 };
 
-const withi18nPlugin = createNextIntlPlugin("./lib/i18n/request.ts");
-
 // Exports
-export default withi18nPlugin(nextConfig);
+export default nextConfig;

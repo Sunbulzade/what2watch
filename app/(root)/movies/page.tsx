@@ -1,9 +1,9 @@
 // Imports - Node
+import Link from "next/link";
 import { Search } from "lucide-react";
 
 // Imports - Local
 import MovieCard from "@/components/movie-card";
-import { Link } from "@/lib/i18n/routing";
 import { Button } from "@/components/ui/button";
 
 // Sample movie data (would be replaced by actual API data)

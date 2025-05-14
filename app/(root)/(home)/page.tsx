@@ -1,11 +1,11 @@
 // Imports - Node
+import Link from "next/link";
 import { ArrowRight, Film, Heart, Search } from "lucide-react";
 
 // Imports - Local
 import HowItWorks from "@/components/how-it-works";
 import FeatureCard from "@/components/feature-card";
 import HeroBackground from "@/components/hero-background";
-import { Link } from "@/lib/i18n/routing";
 import { Button } from "@/components/ui/button";
 
 const testimonials = [

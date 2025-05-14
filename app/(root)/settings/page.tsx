@@ -1,11 +1,11 @@
 "use client";
 
 // Imports - Node
+import Link from "next/link";
 import { useState } from "react";
 import { ArrowLeft, User, Bell, Shield, Trash2 } from "lucide-react";
 
 // Imports - Local
-import { Link } from "@/lib/i18n/routing";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";

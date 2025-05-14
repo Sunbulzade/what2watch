@@ -1,9 +1,3 @@
-// Imports - Node
-import { getTranslations } from "next-intl/server";
-
-// Imports - Local
-import { routing } from "@/lib/i18n/routing";
-
 // Import Types - Node
 import type { MetadataRoute } from "next";
 
@@ -16,15 +10,12 @@ type CustomScreenshots = {
 }[] | undefined;
 
 async function manifest(): Promise<MetadataRoute.Manifest> {
-	const locale = routing.defaultLocale;
-	const t = await getTranslations({ locale, namespace: "Metadata.Manifest" });
-
 	return {
-		lang: locale,
+		lang: "en",
 		dir: "ltr",
-		name: t("name"),
-		short_name: t("short_name"),
-		description: t("description"),
+		name: ":What 2 Watch",
+		short_name: "W2W",
+		description: "",
 		id: "/",
 		start_url: "/",
 		theme_color: "#0a0a0a",

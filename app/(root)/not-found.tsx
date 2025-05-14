@@ -1,17 +1,12 @@
 "use client";
 
-// Imports - Node
-import Error from "next/error";
-
-function RootNotFound(): React.ReactNode {
+function LocaleNotFound(): React.ReactNode {
 	return (
-		<html lang="en">
-			<body>
-				<Error statusCode={404} />
-			</body>
-		</html>
+		<div>
+			Not Found Page
+		</div>
 	);
 }
 
 // Exports
-export default RootNotFound;
+export default LocaleNotFound;
