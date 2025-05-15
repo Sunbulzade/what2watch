@@ -5,12 +5,14 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Home, Search, Film, User, Menu, X, LogIn } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 // Imports - Local
 import { Button } from "@/components/ui/button";
 
 export default function Navbar() {
 	const pathname = usePathname();
+	const { data: session, status } = useSession();
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 
 	// Skip navbar on login and signup pages
@@ -26,7 +28,8 @@ export default function Navbar() {
 		{ name: "Home", path: "/", icon: <Home className="h-5 w-5" /> },
 		{ name: "Recommendations", path: "/recommendations", icon: <Search className="h-5 w-5" /> },
 		{ name: "Movies", path: "/movies", icon: <Film className="h-5 w-5" /> },
-		{ name: "Profile", path: "/profile", icon: <User className="h-5 w-5" /> },
+		// Only show profile if logged in
+		...(status === "authenticated" ? [{ name: "Profile", path: "/profile", icon: <User className="h-5 w-5" /> }] : []),
 	];
 
 	return (
@@ -77,17 +80,30 @@ export default function Navbar() {
 					</nav>
 
 					<div className="flex items-center space-x-2">
-						<Button asChild variant="ghost" className="text-gray-600 hover:text-gray-900 hover:bg-gray-100">
-							<Link href="/login">
-								<LogIn className="h-5 w-5 mr-2" /> Login
-							</Link>
-						</Button>
-						<Button
-							asChild
-							className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
-						>
-							<Link href="/signup">Sign Up</Link>
-						</Button>
+						{status === "authenticated" ? (
+							<Button 
+								asChild 
+								className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
+							>
+								<Link href="/profile">
+									<User className="h-5 w-5 mr-2" /> My Profile
+								</Link>
+							</Button>
+						) : (
+							<>
+								<Button asChild variant="ghost" className="text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+									<Link href="/login">
+										<LogIn className="h-5 w-5 mr-2" /> Login
+									</Link>
+								</Button>
+								<Button
+									asChild
+									className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
+								>
+									<Link href="/signup">Sign Up</Link>
+								</Button>
+							</>
+						)}
 					</div>
 				</div>
 			</header>

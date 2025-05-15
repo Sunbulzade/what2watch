@@ -31,7 +31,13 @@ async function getMovie(id: string) {
 	};
 }
 
-export default async function MoviePage({ params }: { params: { id: string; }; }) {
+type Props = {
+  params: {
+    id: string;
+  };
+};
+
+export default async function MoviePage({ params }: Props) {
 	const movie = await getMovie(params.id);
 
 	return (

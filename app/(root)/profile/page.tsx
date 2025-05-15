@@ -3,14 +3,17 @@
 // Imports - Node
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
-import { Film, Heart, Clock, Settings, BarChart } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Film, Heart, Clock, Settings, BarChart, LogOut } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 // Imports - Local
 import MovieCard from "@/components/movie-card";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/components/ui/use-toast";
 
 // Sample movie data (would be replaced by actual API data)
 const watchlist = [
@@ -87,6 +90,27 @@ const watched = [
 
 function ProfilePage() {
 	const [activeTab, setActiveTab] = useState("watchlist");
+	const { data: session, status } = useSession();
+	const router = useRouter();
+	const { toast } = useToast();
+
+	// Handle logout
+	const handleLogout = async () => {
+		await signOut({ redirect: false });
+		toast({
+			title: "Logged out",
+			description: "You have been successfully logged out",
+		});
+		router.push("/");
+	};
+
+	if (status === "loading") {
+		return (
+			<div className="min-h-screen flex items-center justify-center">
+				<p>Loading...</p>
+			</div>
+		);
+	}
 
 	return (
 		<div className="min-h-screen flex justify-center bg-white text-gray-900">
@@ -99,7 +123,7 @@ function ProfilePage() {
 								<div className="w-24 h-24 rounded-full bg-gradient-to-r from-purple-600 to-cyan-600 p-1 mb-4">
 									<div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
 										<Image
-											src="/placeholder.svg?height=100&width=100"
+											src="/placeholder.svg"
 											alt="Profile"
 											width={100}
 											height={100}
@@ -107,8 +131,8 @@ function ProfilePage() {
 										/>
 									</div>
 								</div>
-								<h2 className="text-xl font-bold mb-1">John Doe</h2>
-								<p className="text-gray-600 mb-4">@johndoe</p>
+								<h2 className="text-xl font-bold mb-1">{session?.user?.name}</h2>
+								<p className="text-gray-600 mb-4">{session?.user?.email}</p>
 								<div className="grid grid-cols-3 w-full text-center mb-6">
 									<div>
 										<p className="font-bold">{watchlist.length}</p>
@@ -123,11 +147,20 @@ function ProfilePage() {
 										<p className="text-xs text-gray-600">Watched</p>
 									</div>
 								</div>
-								<Button asChild variant="outline" className="w-full border-gray-300 hover:bg-gray-100">
-									<Link href="/settings">
-										<Settings className="mr-2 h-4 w-4" /> Settings
-									</Link>
-								</Button>
+								<div className="space-y-2 w-full">
+									<Button asChild variant="outline" className="w-full border-gray-300 hover:bg-gray-100">
+										<Link href="/settings">
+											<Settings className="mr-2 h-4 w-4" /> Settings
+										</Link>
+									</Button>
+									<Button 
+										variant="outline" 
+										className="w-full border-gray-300 hover:bg-gray-100 text-red-600 hover:text-red-700"
+										onClick={handleLogout}
+									>
+										<LogOut className="mr-2 h-4 w-4" /> Logout
+									</Button>
+								</div>
 							</div>
 						</Card>
 
