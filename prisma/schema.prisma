@@ -20,4 +20,28 @@ model User {
   password      String
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  watchlist     Movie[]   @relation("UserWatchlist")
+  likedMovies   Movie[]   @relation("UserLikedMovies")
+  watchedMovies Movie[]   @relation("UserWatchedMovies")
+}
+
+model Movie {
+  id             String    @id @default(uuid())
+  title          String
+  year           Int
+  director       String?
+  plot           String?   @db.Text
+  posterUrl      String?
+  backdropUrl    String?
+  rating         Float?
+  runtime        Int?      // in minutes
+  genres         String[]
+  cast           String[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  // Relations with users
+  inWatchlist    User[]    @relation("UserWatchlist")
+  likedBy        User[]    @relation("UserLikedMovies")
+  watchedBy      User[]    @relation("UserWatchedMovies")
 }

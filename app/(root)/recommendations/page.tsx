@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { Search, Plus, Loader2, Send } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useSession } from "next-auth/react";
 
 // Imports - Local
 import MovieCard from "@/components/movie-card";
@@ -17,57 +18,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-// Sample movie data (would be replaced by actual API data)
-const sampleMovies = [
-	{
-		id: 1,
-		title: "Inception",
-		year: 2010,
-		poster: "/inception.jpg",
-		genres: ["Sci-Fi", "Action", "Thriller"],
-		reason: "Mind-bending sci-fi with complex narrative structure",
-	},
-	{
-		id: 2,
-		title: "The Matrix",
-		year: 1999,
-		poster: "/matrix.webp",
-		genres: ["Sci-Fi", "Action"],
-		reason: "Revolutionary sci-fi with philosophical themes",
-	},
-	{
-		id: 3,
-		title: "Interstellar",
-		year: 2014,
-		poster: "/interstellar.jpg",
-		genres: ["Sci-Fi", "Drama", "Adventure"],
-		reason: "Epic space journey with emotional depth",
-	},
-	{
-		id: 4,
-		title: "Blade Runner 2049",
-		year: 2017,
-		poster: "/placeholder.svg?height=450&width=300",
-		genres: ["Sci-Fi", "Drama", "Mystery"],
-		reason: "Visually stunning sci-fi noir with existential themes",
-	},
-	{
-		id: 5,
-		title: "Arrival",
-		year: 2016,
-		poster: "/arrival.webp",
-		genres: ["Sci-Fi", "Drama", "Mystery"],
-		reason: "Thought-provoking sci-fi with linguistic focus",
-	},
-	{
-		id: 6,
-		title: "Ex Machina",
-		year: 2014,
-		poster: "/placeholder.svg?height=450&width=300",
-		genres: ["Sci-Fi", "Drama", "Thriller"],
-		reason: "Intimate AI story with psychological elements",
-	},
-];
+// Types
+type Movie = {
+  id: string;
+  title: string;
+  year: number;
+  director?: string | null;
+  plot?: string | null;
+  posterUrl?: string | null;
+  backdropUrl?: string | null;
+  rating?: number | null;
+  runtime?: number | null;
+  genres: string[];
+  cast: string[];
+  createdAt?: Date;
+  updatedAt?: Date;
+};
+
+type MovieWithReason = Movie & {
+  reason?: string;
+};
 
 type Message = {
 	id: string;
@@ -77,8 +47,11 @@ type Message = {
 };
 
 function RecommendationsPage() {
+	const { data: session } = useSession();
 	const [searchQuery, setSearchQuery] = useState("");
-	const [isLoading, setIsLoading] = useState(false);	const [recommendations, setRecommendations] = useState<any[]>([]);
+	const [isLoading, setIsLoading] = useState(false);
+	const [recommendations, setRecommendations] = useState<MovieWithReason[]>([]);
+	const [dbMovies, setDbMovies] = useState<Movie[]>([]);
 	const [chatMessage, setChatMessage] = useState("");
 	const [chatHistory, setChatHistory] = useState<Message[]>([		{
 			id: "welcome-message",
@@ -101,15 +74,53 @@ function RecommendationsPage() {
 		}
 	}, [chatHistory, isChatLoading]);
 
+	// Load initial movies from database on page load
+	useEffect(() => {
+		const fetchInitialMovies = async () => {
+			try {
+				const response = await fetch("/api/movies");
+				if (response.ok) {
+					const data = await response.json();
+					if (data.success && data.movies.length > 0) {
+						setDbMovies(data.movies);
+					}
+				}
+			} catch (error) {
+				console.error("Error fetching initial movies:", error);
+			}
+		};
+
+		fetchInitialMovies();
+	}, []);
+
 	const handleSearch = async () => {
 		if (!searchQuery.trim()) return;
 
 		setIsLoading(true);
 		try {
-			const results = await getMovieRecommendations(searchQuery);
-			setRecommendations(results);
+			// First try to fetch from our database based on search query
+			// Using searchType=title to focus on movie titles
+			const dbResponse = await fetch(`/api/movies?query=${encodeURIComponent(searchQuery)}&searchType=title`);
+			const dbData = await dbResponse.json();
+			
+			if (dbData.success && dbData.movies.length > 0) {
+				// If we have database results, use them
+				const moviesWithReasons = dbData.movies.map((movie: Movie) => ({
+					...movie,
+					// Add generic reason if none exists
+					reason: `Movie title matches "${searchQuery}"`
+				}));
+				setRecommendations(moviesWithReasons);
+			} else {
+				// If no database results, fall back to AI recommendations
+				const aiResults = await getMovieRecommendations(searchQuery);
+				setRecommendations(aiResults);
+			}
 		} catch (error) {
 			console.error("Error getting recommendations:", error);
+			// Use fallback for AI recommendations if they fail
+			const aiResults = await getMovieRecommendations(searchQuery);
+			setRecommendations(aiResults);
 		} finally {
 			setIsLoading(false);
 		}
@@ -167,6 +178,9 @@ function RecommendationsPage() {
 				currentMessage.toLowerCase().includes("öneri") ||
 				currentMessage.toLowerCase().includes("recommend")) {
 				setSearchQuery(currentMessage);
+				// Search by title when the message mentions a specific movie title
+				const movieTitleMention = currentMessage.toLowerCase().includes("film") || 
+					currentMessage.toLowerCase().includes("movie");
 				handleSearch();
 			}
 		} catch (error) {
@@ -208,7 +222,7 @@ function RecommendationsPage() {
 					<TabsContent value="search" className="mt-6">
 						<div className="flex gap-2 mb-8">
 							<Input
-								placeholder="Enter movies, genres, or directors you like..."
+								placeholder="Enter a movie title to search..."
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
 								className="bg-white border-gray-300"
@@ -218,7 +232,7 @@ function RecommendationsPage() {
 								className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
 							>
 								{isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Search className="h-4 w-4 mr-2" />}
-								Find Movies
+								Search Movies
 							</Button>
 						</div>
 					</TabsContent>
@@ -398,6 +412,10 @@ function RecommendationsPage() {
 													variant="outline"
 													size="sm"
 													className="border-gray-300 hover:bg-gray-100 hover:text-purple-600"
+													onClick={() => {
+														setSearchQuery(genre);
+														handleSearch();
+													}}
 												>
 													{genre}
 												</Button>
@@ -423,7 +441,10 @@ function RecommendationsPage() {
 										</div>
 									</div>
 
-									<Button className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">
+									<Button 
+										className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
+										onClick={handleSearch}
+									>
 										Generate Recommendations
 									</Button>
 								</div>
@@ -443,14 +464,66 @@ function RecommendationsPage() {
 					) : recommendations.length > 0 ? (
 						<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 							{recommendations.map((movie) => (
-								<MovieCard key={movie.id} movie={movie} />
+								<MovieCard 
+									key={movie.id} 
+									movie={{
+										id: movie.id,
+										title: movie.title,
+										year: movie.year,
+										poster: (movie as any).poster || movie.posterUrl || "/placeholder.svg?height=450&width=300",
+										genres: movie.genres,
+										reason: movie.reason
+									}} 
+								/>
 							))}
 						</div>
 					) : (
 						<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-							{sampleMovies.map((movie) => (
-								<MovieCard key={movie.id} movie={movie} />
-							))}
+							{dbMovies.length > 0 ? (
+								dbMovies.map((movie) => (
+									<MovieCard 
+										key={movie.id} 
+										movie={{
+											id: movie.id,
+											title: movie.title,
+											year: movie.year,
+											poster: movie.posterUrl || "/placeholder.svg?height=450&width=300",
+											genres: movie.genres,
+											reason: "Popular movie"
+										}} 
+									/>
+								))
+							) : (
+								// Fallback data if database is empty
+								[
+									{
+										id: "1",
+										title: "Inception",
+										year: 2010,
+										poster: "/inception.jpg",
+										genres: ["Sci-Fi", "Action", "Thriller"],
+										reason: "Mind-bending sci-fi with complex narrative structure"
+									},
+									{
+										id: "2",
+										title: "The Matrix",
+										year: 1999,
+										poster: "/matrix.webp",
+										genres: ["Sci-Fi", "Action"],
+										reason: "Revolutionary sci-fi with philosophical themes"
+									},
+									{
+										id: "3",
+										title: "Interstellar",
+										year: 2014,
+										poster: "/interstellar.jpg",
+										genres: ["Sci-Fi", "Drama", "Adventure"],
+										reason: "Epic space journey with emotional depth"
+									}
+								].map((movie) => (
+									<MovieCard key={movie.id} movie={movie} />
+								))
+							)}
 						</div>
 					)}
 				</div>

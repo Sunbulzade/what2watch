@@ -10,7 +10,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
 interface MovieCardProps {
 	movie: {
-		id: number;
+		id: string | number;
 		title: string;
 		year: number;
 		poster: string;
