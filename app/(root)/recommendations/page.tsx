@@ -20,23 +20,35 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Types
 type Movie = {
-  id: string;
-  title: string;
-  year: number;
-  director?: string | null;
-  plot?: string | null;
-  posterUrl?: string | null;
-  backdropUrl?: string | null;
-  rating?: number | null;
-  runtime?: number | null;
-  genres: string[];
-  cast: string[];
-  createdAt?: Date;
-  updatedAt?: Date;
+	id: string;
+	title: string;
+	year: number;
+	director?: string | null;
+	plot?: string | null;
+	posterUrl?: string | null;
+	backdropUrl?: string | null;
+	rating?: number | null;
+	runtime?: number | null;
+	genres: string[];
+	cast: string[];
+	createdAt?: Date;
+	updatedAt?: Date;
+};
+
+// Types
+type MoviePoster = {
+	id: number;
+	id_tmdb: number;
+	title: string;
+	year: number;
+	plot?: string | null;
+	posterBase64?: string | null;
+	runtime?: number | null;
+	genres: string[];
 };
 
 type MovieWithReason = Movie & {
-  reason?: string;
+	reason?: string;
 };
 
 type Message = {
@@ -50,19 +62,54 @@ function RecommendationsPage() {
 	const { data: session } = useSession();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
-	const [recommendations, setRecommendations] = useState<MovieWithReason[]>([]);
-	const [dbMovies, setDbMovies] = useState<Movie[]>([]);
+	const [recommendations, setRecommendations] = useState<MoviePoster[]>([]);
+	const [dbMovies, setDbMovies] = useState<MoviePoster[]>([]);
 	const [chatMessage, setChatMessage] = useState("");
-	const [chatHistory, setChatHistory] = useState<Message[]>([		{
-			id: "welcome-message",
-			content:
-				"Merhaba! Ben sizin film öneri asistanınızım. Sevdiğiniz filmler, izlemek istediğiniz türler veya aradığınız tarzda film önerileri hakkında bana bilgi verebilirsiniz. Size özel film önerileri sunmaktan memnuniyet duyarım!",
-			role: "assistant",
-			timestamp: new Date(),
-		},
+	const [chatHistory, setChatHistory] = useState<Message[]>([{
+		id: "welcome-message",
+		content:
+			"Merhaba! Ben sizin film öneri asistanınızım. Sevdiğiniz filmler, izlemek istediğiniz türler veya aradığınız tarzda film önerileri hakkında bana bilgi verebilirsiniz. Size özel film önerileri sunmaktan memnuniyet duyarım!",
+		role: "assistant",
+		timestamp: new Date(),
+	},
 	]);
 	const [isChatLoading, setIsChatLoading] = useState(false);
 	const scrollAreaRef = useRef<HTMLDivElement>(null);
+	const [movies, setMovies] = useState<MoviePoster[]>([]);
+	const [error, setError] = useState<string | null>(null);
+
+
+	// Fetch movies from movie_posters table on component mount
+	useEffect(() => {
+		const fetchMovies = async () => {
+			try {
+				setIsLoading(true);
+				// Get movies from the movie_posters table using the Pages Router API
+				const response = await fetch("/api/movie-posters?limit=20");
+
+				if (!response.ok) {
+					throw new Error("Failed to fetch movies from the API");
+				}
+
+				const data = await response.json();
+
+				if (data.success && data.movies.length > 0) {
+					setMovies(data.movies);
+				} else {
+					// If no movies in database or API returns empty array
+					setError("No movies found in the database");
+				}
+			} catch (error) {
+				console.error("Error fetching movies:", error);
+				setError("Failed to load movies. Please try again later.");
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		fetchMovies();
+	}, []);
+
 
 	// Auto-scroll to bottom when new messages arrive
 	useEffect(() => {
@@ -78,7 +125,7 @@ function RecommendationsPage() {
 	useEffect(() => {
 		const fetchInitialMovies = async () => {
 			try {
-				const response = await fetch("/api/movies");
+				const response = await fetch("/api/movie-posters?limit=10");
 				if (response.ok) {
 					const data = await response.json();
 					if (data.success && data.movies.length > 0) {
@@ -100,9 +147,10 @@ function RecommendationsPage() {
 		try {
 			// First try to fetch from our database based on search query
 			// Using searchType=title to focus on movie titles
-			const dbResponse = await fetch(`/api/movies?query=${encodeURIComponent(searchQuery)}&searchType=title`);
+			const dbResponse = await fetch(`/api/movie-posters?query=${encodeURIComponent(searchQuery)}`);
 			const dbData = await dbResponse.json();
-			
+			console.log("Database response:", dbData);
+
 			if (dbData.success && dbData.movies.length > 0) {
 				// If we have database results, use them
 				const moviesWithReasons = dbData.movies.map((movie: Movie) => ({
@@ -144,7 +192,7 @@ function RecommendationsPage() {
 		try {
 			// Film RAG sistemine özel olarak yapılandırılmış prompt
 			const systemPrompt = "You are a movie expert. You can only talk about films, directors, actors, film genres, movie recommendations, and general cinema knowledge. You must not respond to questions unrelated to these topics. Try to help users as much as possible and offer personalized recommendations based on the user's movie preferences. Please respond only in English.";
-			
+
 			const response = await fetch("http://localhost:11434/api/generate", {
 				method: "POST",
 				headers: {
@@ -162,37 +210,37 @@ function RecommendationsPage() {
 			}
 
 			const data = await response.json();
-			
+
 			const assistantMessage: Message = {
 				id: Date.now().toString(),
 				content: data.response || "Üzgünüm, film önerisi oluşturamadım. Lütfen tekrar deneyin.",
 				role: "assistant",
 				timestamp: new Date(),
 			};
-			
+
 			setChatHistory((prev) => [...prev, assistantMessage]);
-			
+
 			// Eğer film önerisi içeriyorsa, arama sonuçlarını da göster
-			if (currentMessage.toLowerCase().includes("film") || 
+			if (currentMessage.toLowerCase().includes("film") ||
 				currentMessage.toLowerCase().includes("movie") ||
 				currentMessage.toLowerCase().includes("öneri") ||
 				currentMessage.toLowerCase().includes("recommend")) {
 				setSearchQuery(currentMessage);
 				// Search by title when the message mentions a specific movie title
-				const movieTitleMention = currentMessage.toLowerCase().includes("film") || 
+				const movieTitleMention = currentMessage.toLowerCase().includes("film") ||
 					currentMessage.toLowerCase().includes("movie");
 				handleSearch();
 			}
 		} catch (error) {
 			console.error("Chat yanıtı alınırken hata:", error);
-			
+
 			const errorMessage: Message = {
 				id: Date.now().toString(),
 				content: "Üzgünüm, bir hata oluştu. Ollama modelinizin çalıştığından emin olun.",
 				role: "assistant",
 				timestamp: new Date(),
 			};
-			
+
 			setChatHistory((prev) => [...prev, errorMessage]);
 		} finally {
 			setIsChatLoading(false);
@@ -248,9 +296,8 @@ function RecommendationsPage() {
 												className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
 											>
 												<div
-													className={`flex gap-3 max-w-[80%] ${
-														message.role === "user" ? "flex-row-reverse" : "flex-row"
-													}`}
+													className={`flex gap-3 max-w-[80%] ${message.role === "user" ? "flex-row-reverse" : "flex-row"
+														}`}
 												>
 													<Avatar className="h-8 w-8 bg-gradient-to-r from-purple-600 to-cyan-600">
 														<div className="text-white text-xs font-bold">
@@ -258,11 +305,10 @@ function RecommendationsPage() {
 														</div>
 													</Avatar>
 													<div
-														className={`rounded-lg px-4 py-2 text-sm ${
-															message.role === "user"
-																? "bg-gradient-to-r from-purple-600 to-cyan-600 text-white"
-																: "bg-gray-100 text-gray-800"
-														}`}
+														className={`rounded-lg px-4 py-2 text-sm ${message.role === "user"
+															? "bg-gradient-to-r from-purple-600 to-cyan-600 text-white"
+															: "bg-gray-100 text-gray-800"
+															}`}
 													>
 														{message.role === "assistant" ? (
 															<div className="markdown-wrapper">
@@ -327,7 +373,7 @@ function RecommendationsPage() {
 																		margin: 0.5rem 0;
 																	}
 																`}</style>
-																<ReactMarkdown 
+																<ReactMarkdown
 																	remarkPlugins={[remarkGfm]}
 																>
 																	{message.content}
@@ -441,7 +487,7 @@ function RecommendationsPage() {
 										</div>
 									</div>
 
-									<Button 
+									<Button
 										className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
 										onClick={handleSearch}
 									>
@@ -464,33 +510,31 @@ function RecommendationsPage() {
 					) : recommendations.length > 0 ? (
 						<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 							{recommendations.map((movie) => (
-								<MovieCard 
-									key={movie.id} 
+								<MovieCard
+									key={movie.id}
 									movie={{
-										id: movie.id,
+										id: movie.id.toString(),
 										title: movie.title,
 										year: movie.year,
-										poster: (movie as any).poster || movie.posterUrl || "/placeholder.svg?height=450&width=300",
-										genres: movie.genres,
-										reason: movie.reason
-									}} 
+										poster: movie.posterBase64 || "/placeholder.svg?height=450&width=300",
+										genres: movie.genres
+									}}
 								/>
 							))}
 						</div>
 					) : (
 						<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-							{dbMovies.length > 0 ? (
-								dbMovies.map((movie) => (
-									<MovieCard 
-										key={movie.id} 
+							{movies.length > 0 ? (
+								movies.map((movie) => (
+									<MovieCard
+										key={movie.id}
 										movie={{
-											id: movie.id,
+											id: movie.id.toString(),
 											title: movie.title,
 											year: movie.year,
-											poster: movie.posterUrl || "/placeholder.svg?height=450&width=300",
-											genres: movie.genres,
-											reason: "Popular movie"
-										}} 
+											poster: movie.posterBase64 || "/placeholder.svg?height=450&width=300",
+											genres: movie.genres
+										}}
 									/>
 								))
 							) : (

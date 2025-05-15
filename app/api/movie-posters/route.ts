@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
         FROM movie_posters
         WHERE
           title ILIKE ${`%${query}%`}
-        ORDER BY popularity DESC
-        LIMIT ${limit}
+        
+        
       `;
     } else {
       // Get top movies based on popularity
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
           runtime_min as runtime,
           genres
         FROM movie_posters
-        ORDER BY popularity DESC
+        ORDER BY RANDOM()
         LIMIT ${limit}
       `;
     }
