@@ -5,25 +5,21 @@ import Link from "next/link";
 import { Search, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 
+
 // Imports - Local
 import MovieCard from "@/components/movie-card";
 import { Button } from "@/components/ui/button";
 
 // Types
-type Movie = {
-  id: string;
+type MoviePoster = {
+  id: number;
+  id_tmdb: number;
   title: string;
   year: number;
-  director?: string | null;
   plot?: string | null;
-  posterUrl?: string | null;
-  backdropUrl?: string | null;
-  rating?: number | null;
+  posterBase64?: string | null;
   runtime?: number | null;
   genres: string[];
-  cast: string[];
-  createdAt?: Date;
-  updatedAt?: Date;
 };
 
 // Fallback movie data (used only if API fails)
@@ -73,17 +69,17 @@ const fallbackMovies = [
 ];
 
 function MoviesPage() {
-	const [movies, setMovies] = useState<Movie[]>([]);
+	const [movies, setMovies] = useState<MoviePoster[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
-	// Fetch movies from database on component mount
+	// Fetch movies from movie_posters table on component mount
 	useEffect(() => {
 		const fetchMovies = async () => {
 			try {
 				setIsLoading(true);
-				// Get more movies (12) for the movies page
-				const response = await fetch("/api/movies?limit=12");
+				// Get movies from the movie_posters table using the Pages Router API
+				const response = await fetch("/api/movie-posters?limit=20");
 				
 				if (!response.ok) {
 					throw new Error("Failed to fetch movies from the API");
@@ -144,10 +140,10 @@ function MoviesPage() {
 							<MovieCard 
 								key={movie.id} 
 								movie={{
-									id: movie.id,
+									id: movie.id.toString(),
 									title: movie.title,
 									year: movie.year,
-									poster: movie.posterUrl || "/placeholder.svg?height=450&width=300",
+									poster: movie.posterBase64 || "/placeholder.svg?height=450&width=300",
 									genres: movie.genres
 								}} 
 							/>

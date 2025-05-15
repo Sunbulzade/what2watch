@@ -15,6 +15,18 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 
+// Types
+type MoviePoster = {
+	id: number;
+	id_tmdb: number;
+	title: string;
+	year: number;
+	plot?: string | null;
+	posterBase64?: string | null;
+	runtime?: number | null;
+	genres: string[];
+};
+
 // Sample movie data (would be replaced by actual API data)
 const watchlist = [
 	{
@@ -94,6 +106,45 @@ function ProfilePage() {
 	const router = useRouter();
 	const { toast } = useToast();
 
+	const [movies, setMovies] = useState<MoviePoster[]>([]);
+	const [isLoading, setIsLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+
+	// Fetch movies from movie_posters table on component mount
+	useEffect(() => {
+		const fetchMovies = async () => {
+			try {
+				setIsLoading(true);
+				// Get movies from the movie_posters table using the Pages Router API
+				const response = await fetch("/api/movie-posters?limit=12");
+
+				if (!response.ok) {
+					throw new Error("Failed to fetch movies from the API");
+				}
+
+				const data = await response.json();
+
+				if (data.success && data.movies.length > 0) {
+					setMovies(data.movies);
+				} else {
+					// If no movies in database or API returns empty array
+					setError("No movies found in the database");
+				}
+			} catch (error) {
+				console.error("Error fetching movies:", error);
+				setError("Failed to load movies. Please try again later.");
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		fetchMovies();
+	}, []);
+
+
+
+
+
 	// Handle logout
 	const handleLogout = async () => {
 		await signOut({ redirect: false });
@@ -153,8 +204,8 @@ function ProfilePage() {
 											<Settings className="mr-2 h-4 w-4" /> Settings
 										</Link>
 									</Button>
-									<Button 
-										variant="outline" 
+									<Button
+										variant="outline"
 										className="w-full border-gray-300 hover:bg-gray-100 text-red-600 hover:text-red-700"
 										onClick={handleLogout}
 									>
@@ -226,8 +277,17 @@ function ProfilePage() {
 								<h2 className="text-2xl font-bold mb-6">Your Watchlist</h2>
 								{watchlist.length > 0 ? (
 									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-										{watchlist.map((movie) => (
-											<MovieCard key={movie.id} movie={movie} />
+										{movies.map((movie) => (
+											<MovieCard
+												key={movie.id}
+												movie={{
+													id: movie.id.toString(),
+													title: movie.title,
+													year: movie.year,
+													poster: movie.posterBase64 || "/placeholder.svg?height=450&width=300",
+													genres: movie.genres
+												}}
+											/>
 										))}
 									</div>
 								) : (
@@ -247,8 +307,17 @@ function ProfilePage() {
 								<h2 className="text-2xl font-bold mb-6">Movies You Liked</h2>
 								{liked.length > 0 ? (
 									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-										{liked.map((movie) => (
-											<MovieCard key={movie.id} movie={movie} />
+										{movies.map((movie) => (
+											<MovieCard
+												key={movie.id}
+												movie={{
+													id: movie.id.toString(),
+													title: movie.title,
+													year: movie.year,
+													poster: movie.posterBase64 || "/placeholder.svg?height=450&width=300",
+													genres: movie.genres
+												}}
+											/>
 										))}
 									</div>
 								) : (
@@ -268,8 +337,17 @@ function ProfilePage() {
 								<h2 className="text-2xl font-bold mb-6">Movies You've Watched</h2>
 								{watched.length > 0 ? (
 									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-										{watched.map((movie) => (
-											<MovieCard key={movie.id} movie={movie} />
+										{movies.map((movie) => (
+											<MovieCard
+												key={movie.id}
+												movie={{
+													id: movie.id.toString(),
+													title: movie.title,
+													year: movie.year,
+													poster: movie.posterBase64 || "/placeholder.svg?height=450&width=300",
+													genres: movie.genres
+												}}
+											/>
 										))}
 									</div>
 								) : (
