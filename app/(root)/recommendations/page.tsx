@@ -12,7 +12,6 @@ import MovieCard from "@/components/movie-card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { getMovieRecommendations } from "@/lib/ai-recommendations";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar } from "@/components/ui/avatar";
@@ -161,14 +160,10 @@ function RecommendationsPage() {
 				setRecommendations(moviesWithReasons);
 			} else {
 				// If no database results, fall back to AI recommendations
-				const aiResults = await getMovieRecommendations(searchQuery);
-				setRecommendations(aiResults);
 			}
 		} catch (error) {
 			console.error("Error getting recommendations:", error);
 			// Use fallback for AI recommendations if they fail
-			const aiResults = await getMovieRecommendations(searchQuery);
-			setRecommendations(aiResults);
 		} finally {
 			setIsLoading(false);
 		}
