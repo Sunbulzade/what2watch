@@ -248,36 +248,6 @@ function ProfilePage() {
 								</div>
 							</div>
 						</Card>
-
-						{/* Stats Card */}
-						<Card className="bg-white border-gray-200 p-6 mt-6">
-							<h3 className="text-lg font-semibold mb-4 flex items-center">
-								<BarChart className="mr-2 h-5 w-5 text-purple-600" /> Your Stats
-							</h3>
-							<div className="space-y-4">
-								<div>
-									<p className="text-sm text-gray-600 mb-1">Top Genre</p>
-									<div className="flex items-center">
-										<div className="w-2 h-2 rounded-full bg-purple-600 mr-2"></div>
-										<p>Sci-Fi (67%)</p>
-									</div>
-								</div>
-								<div>
-									<p className="text-sm text-gray-600 mb-1">Favorite Decade</p>
-									<div className="flex items-center">
-										<div className="w-2 h-2 rounded-full bg-cyan-600 mr-2"></div>
-										<p>2010s (56%)</p>
-									</div>
-								</div>
-								<div>
-									<p className="text-sm text-gray-600 mb-1">Total Watch Time</p>
-									<div className="flex items-center">
-										<div className="w-2 h-2 rounded-full bg-purple-600 mr-2"></div>
-										<p>18 hours</p>
-									</div>
-								</div>
-							</div>
-						</Card>
 					</div>
 
 					{/* Movie Lists */}
