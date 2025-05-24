@@ -80,8 +80,6 @@ function MoviesPage() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
 	const [yearRange, setYearRange] = useState<[number, number]>([1970, 2025]);
-	const [favoriteMovies, setFavoriteMovies] = useState<string[]>([]);
-	const [favoriteMovie, setFavoriteMovie] = useState("");
 
 	// Fetch movies from movie_posters table on component mount
 	useEffect(() => {
@@ -160,19 +158,6 @@ function MoviesPage() {
 		} finally {
 			setIsLoading(false);
 		}
-	};
-
-	// Handler to add a favorite movie
-	const addFavoriteMovie = () => {
-		if (favoriteMovie && !favoriteMovies.includes(favoriteMovie)) {
-			setFavoriteMovies([...favoriteMovies, favoriteMovie]);
-			setFavoriteMovie("");
-		}
-	};
-
-	// Handler to remove a favorite movie
-	const removeFavoriteMovie = (movie: string) => {
-		setFavoriteMovies(favoriteMovies.filter(m => m !== movie));
 	};
 
 	// Handler to toggle genre selection
@@ -286,58 +271,6 @@ function MoviesPage() {
 												<span>{yearRange[0]}</span>
 												<span>{yearRange[1]}</span>
 											</div>
-										</div>
-									</div>
-
-									<div>
-										<h3 className="text-lg font-medium mb-2">Movies You've Enjoyed</h3>
-										<div className="flex gap-2 mb-2">
-											<Input 
-												placeholder="Enter a movie title..." 
-												className="bg-white border-gray-300"
-												value={favoriteMovie}
-												onChange={(e) => setFavoriteMovie(e.target.value)}
-												onKeyDown={(e) => {
-													if (e.key === 'Enter') {
-														addFavoriteMovie();
-													}
-												}}
-											/>
-											<Button 
-												variant="outline" 
-												size="icon" 
-												className="border-gray-300"
-												onClick={addFavoriteMovie}
-											>
-												<Plus className="h-4 w-4" />
-											</Button>
-										</div>
-										{favoriteMovies.length > 0 && (
-											<div className="flex flex-wrap gap-2">
-												{favoriteMovies.map((movie) => (
-													<Badge key={movie} variant="secondary" className="bg-gray-100 hover:bg-gray-200 text-gray-800">
-														{movie} <span className="ml-2 text-xs cursor-pointer" onClick={() => removeFavoriteMovie(movie)}>×</span>
-													</Badge>
-												))}
-											</div>
-										)}
-									</div>
-
-									<div>
-										<h3 className="text-lg font-medium mb-2">Additional Filters</h3>
-										<div className="flex flex-wrap gap-2">
-											<Button variant="outline" size="sm" className="border-gray-300 hover:bg-gray-100">
-												Popular Only
-											</Button>
-											<Button variant="outline" size="sm" className="border-gray-300 hover:bg-gray-100">
-												Recent Releases
-											</Button>
-											<Button variant="outline" size="sm" className="border-gray-300 hover:bg-gray-100">
-												Award Winners
-											</Button>
-											<Button variant="outline" size="sm" className="border-gray-300 hover:bg-gray-100">
-												Classic Movies
-											</Button>
 										</div>
 									</div>
 
