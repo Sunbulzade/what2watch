@@ -19,11 +19,13 @@ export async function GET(request: NextRequest) {
     const query = searchParams.get("query") || "";
     const limit = parseInt(searchParams.get("limit") || "12", 10);
     const genres = searchParams.get("genres") || "";
+    const minYear = searchParams.get("minYear") ? parseInt(searchParams.get("minYear")!, 10) : null;
+    const maxYear = searchParams.get("maxYear") ? parseInt(searchParams.get("maxYear")!, 10) : null;
     
     // Use a raw query to access the movie_posters table since it's not in the Prisma schema
     let movies: MoviePosterRaw[];
     
-    if (query || genres) {
+    if (query || genres || minYear || maxYear) {
       // Search for movies in movie_posters table matching the query or genres
       let sqlQuery = `
         SELECT 
@@ -54,6 +56,17 @@ export async function GET(request: NextRequest) {
         // Split the comma-separated genres and create a JSON array of objects with name property
         const genresArray = genres.split(',').map(g => ({ name: g.trim() }));
         params.push(JSON.stringify(genresArray));
+      }
+      
+      // Add year range filters if provided
+      if (minYear !== null) {
+        sqlQuery += ` AND EXTRACT(YEAR FROM release_date)::integer >= $${params.length + 1}`;
+        params.push(minYear);
+      }
+      
+      if (maxYear !== null) {
+        sqlQuery += ` AND EXTRACT(YEAR FROM release_date)::integer <= $${params.length + 1}`;
+        params.push(maxYear);
       }
       
       sqlQuery += ` LIMIT $${params.length + 1}`;

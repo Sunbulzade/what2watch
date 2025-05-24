@@ -132,6 +132,12 @@ function MoviesPage() {
 				queryParams.append("genres", selectedGenres.join(','));
 			}
 			
+			// Add year range parameters
+			if (yearRange[0] !== 1970 || yearRange[1] !== 2025) {
+				queryParams.append("minYear", yearRange[0].toString());
+				queryParams.append("maxYear", yearRange[1].toString());
+			}
+			
 			queryParams.append("limit", "20");
 			
 			// Add more query parameters here when API supports them
