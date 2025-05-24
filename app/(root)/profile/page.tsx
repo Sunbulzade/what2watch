@@ -107,8 +107,11 @@ function ProfilePage() {
 	const { toast } = useToast();
 
 	const [movies, setMovies] = useState<MoviePoster[]>([]);
+	const [likedMovies, setLikedMovies] = useState<any[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+	const [isLoadingLiked, setIsLoadingLiked] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [likedError, setLikedError] = useState<string | null>(null);
 
 	// Fetch movies from movie_posters table on component mount
 	useEffect(() => {
@@ -140,6 +143,39 @@ function ProfilePage() {
 
 		fetchMovies();
 	}, []);
+	
+	// Fetch liked movies when active tab changes to "liked"
+	useEffect(() => {
+		const fetchLikedMovies = async () => {
+			if (activeTab !== "liked" || !session) return;
+			
+			try {
+				setIsLoadingLiked(true);
+				setLikedError(null);
+				
+				const response = await fetch("/api/user/liked-movies");
+				
+				if (!response.ok) {
+					throw new Error("Failed to fetch liked movies");
+				}
+				
+				const data = await response.json();
+				
+				if (data.success && data.likedMovies) {
+					setLikedMovies(data.likedMovies);
+				} else {
+					setLikedError("No liked movies found");
+				}
+			} catch (error) {
+				console.error("Error fetching liked movies:", error);
+				setLikedError("Failed to load liked movies. Please try again later.");
+			} finally {
+				setIsLoadingLiked(false);
+			}
+		};
+		
+		fetchLikedMovies();
+	}, [activeTab, session]);
 
 
 
@@ -190,7 +226,7 @@ function ProfilePage() {
 										<p className="text-xs text-gray-600">Watchlist</p>
 									</div>
 									<div>
-										<p className="font-bold">{liked.length}</p>
+										<p className="font-bold">{likedMovies.length}</p>
 										<p className="text-xs text-gray-600">Liked</p>
 									</div>
 									<div>
@@ -305,30 +341,34 @@ function ProfilePage() {
 
 							<TabsContent value="liked">
 								<h2 className="text-2xl font-bold mb-6">Movies You Liked</h2>
-								{liked.length > 0 ? (
-									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-										{movies.map((movie) => (
-											<MovieCard
-												key={movie.id}
-												movie={{
-													id: movie.id.toString(),
-													title: movie.title,
-													year: movie.year,
-													poster: movie.posterBase64 || "/placeholder.svg?height=450&width=300",
-													genres: movie.genres
-												}}
-											/>
-										))}
-									</div>
-								) : (
+								{isLoadingLiked ? (
 									<div className="text-center py-12">
-										<p className="text-gray-600">You haven't liked any movies yet.</p>
+										<p>Loading your liked movies...</p>
+									</div>
+								) : likedError || likedMovies.length === 0 ? (
+									<div className="text-center py-12">
+										<p className="text-gray-600">{likedError || "You haven't liked any movies yet."}</p>
 										<Button
 											asChild
 											className="mt-4 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
 										>
-											<Link href="/recommendations">Discover Movies</Link>
+											<Link href="/movies">Discover Movies</Link>
 										</Button>
+									</div>
+								) : (
+									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+										{likedMovies.map((movie) => (
+											<MovieCard
+												key={movie.id}
+												movie={{
+													id: movie.id,
+													title: movie.title,
+													year: movie.year,
+													poster: movie.posterBase64 || "/placeholder.svg?height=450&width=300",
+													genres: movie.genres || []
+												}}
+											/>
+										))}
 									</div>
 								)}
 							</TabsContent>

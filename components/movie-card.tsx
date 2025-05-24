@@ -2,11 +2,14 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ThumbsUp, ThumbsDown, Plus } from "lucide-react";
+import { useState } from "react";
+import { useSession } from "next-auth/react";
 
 // Imports - Local
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { useToast } from "@/components/ui/use-toast";
 
 interface MovieCardProps {
 	movie: {
@@ -20,6 +23,56 @@ interface MovieCardProps {
 }
 
 export default function MovieCard({ movie }: MovieCardProps) {
+	const { data: session } = useSession();
+	const { toast } = useToast();
+	const [isLiking, setIsLiking] = useState(false);
+	
+	const handleLikeMovie = async () => {
+		if (!session) {
+			toast({
+				title: "Authentication required",
+				description: "You need to be logged in to like movies",
+				variant: "destructive",
+			});
+			return;
+		}
+		
+		try {
+			setIsLiking(true);
+			const response = await fetch("/api/user/like-movie", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ movieId: movie.id }),
+			});
+			
+			const data = await response.json();
+			
+			if (data.success) {
+				toast({
+					title: "Movie liked",
+					description: "This movie has been added to your liked movies",
+					variant: "default",
+				});
+			} else {
+				toast({
+					title: "Error",
+					description: data.error || "Failed to like movie",
+					variant: "destructive",
+				});
+			}
+		} catch (error) {
+			toast({
+				title: "Error",
+				description: "Something went wrong. Please try again later.",
+				variant: "destructive",
+			});
+		} finally {
+			setIsLiking(false);
+		}
+	};
+
 	return (
 		<Card className="bg-white border-gray-200 overflow-hidden hover:border-purple-500 transition-all duration-300 flex flex-col">
 			<div className="relative aspect-[2/3] overflow-hidden">
@@ -52,7 +105,13 @@ export default function MovieCard({ movie }: MovieCardProps) {
 			</CardContent>
 
 			<CardFooter className="p-4 pt-0 flex justify-center space-x-4">
-				<Button variant="outline" size="icon" className="border-gray-300 hover:bg-gray-100 hover:text-green-600">
+				<Button 
+					variant="outline" 
+					size="icon" 
+					className="border-gray-300 hover:bg-gray-100 hover:text-green-600"
+					onClick={handleLikeMovie}
+					disabled={isLiking}
+				>
 					<ThumbsUp className="h-4 w-4" />
 				</Button>
 				<Button variant="outline" size="icon" className="border-gray-300 hover:bg-gray-100 hover:text-red-600">
