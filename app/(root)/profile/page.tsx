@@ -106,43 +106,45 @@ function ProfilePage() {
 	const router = useRouter();
 	const { toast } = useToast();
 
-	const [movies, setMovies] = useState<MoviePoster[]>([]);
+	const [watchlistMovies, setWatchlistMovies] = useState<any[]>([]);
 	const [likedMovies, setLikedMovies] = useState<any[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
+	const [isLoadingWatchlist, setIsLoadingWatchlist] = useState(true);
 	const [isLoadingLiked, setIsLoadingLiked] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+	const [watchlistError, setWatchlistError] = useState<string | null>(null);
 	const [likedError, setLikedError] = useState<string | null>(null);
 
-	// Fetch movies from movie_posters table on component mount
+	// Fetch watchlist movies when active tab changes to "watchlist"
 	useEffect(() => {
-		const fetchMovies = async () => {
+		const fetchWatchlist = async () => {
+			if (activeTab !== "watchlist" || !session) return;
+			
 			try {
-				setIsLoading(true);
-				// Get movies from the movie_posters table using the Pages Router API
-				const response = await fetch("/api/movie-posters?limit=12");
-
+				setIsLoadingWatchlist(true);
+				setWatchlistError(null);
+				
+				const response = await fetch("/api/user/watchlist");
+				
 				if (!response.ok) {
-					throw new Error("Failed to fetch movies from the API");
+					throw new Error("Failed to fetch watchlist");
 				}
-
+				
 				const data = await response.json();
-
-				if (data.success && data.movies.length > 0) {
-					setMovies(data.movies);
+				
+				if (data.success && data.watchlist) {
+					setWatchlistMovies(data.watchlist);
 				} else {
-					// If no movies in database or API returns empty array
-					setError("No movies found in the database");
+					setWatchlistError("No movies found in watchlist");
 				}
 			} catch (error) {
-				console.error("Error fetching movies:", error);
-				setError("Failed to load movies. Please try again later.");
+				console.error("Error fetching watchlist:", error);
+				setWatchlistError("Failed to load watchlist. Please try again later.");
 			} finally {
-				setIsLoading(false);
+				setIsLoadingWatchlist(false);
 			}
 		};
 
-		fetchMovies();
-	}, []);
+		fetchWatchlist();
+	}, [activeTab, session]);
 	
 	// Fetch liked movies when active tab changes to "liked"
 	useEffect(() => {
@@ -220,18 +222,14 @@ function ProfilePage() {
 								</div>
 								<h2 className="text-xl font-bold mb-1">{session?.user?.name}</h2>
 								<p className="text-gray-600 mb-4">{session?.user?.email}</p>
-								<div className="grid grid-cols-3 w-full text-center mb-6">
+								<div className="grid grid-cols-2 w-full text-center mb-6">
 									<div>
-										<p className="font-bold">{watchlist.length}</p>
+										<p className="font-bold">{watchlistMovies.length}</p>
 										<p className="text-xs text-gray-600">Watchlist</p>
 									</div>
 									<div>
 										<p className="font-bold">{likedMovies.length}</p>
 										<p className="text-xs text-gray-600">Liked</p>
-									</div>
-									<div>
-										<p className="font-bold">{watched.length}</p>
-										<p className="text-xs text-gray-600">Watched</p>
 									</div>
 								</div>
 								<div className="space-y-2 w-full">
@@ -285,7 +283,7 @@ function ProfilePage() {
 					{/* Movie Lists */}
 					<div className="flex-grow">
 						<Tabs defaultValue="watchlist" className="w-full">
-							<TabsList className="grid w-full grid-cols-3 bg-gray-100 rounded-lg p-1 mb-6">
+							<TabsList className="grid w-full grid-cols-2 bg-gray-100 rounded-lg p-1 mb-6">
 								<TabsTrigger
 									value="watchlist"
 									className="data-[state=active]:bg-white flex items-center"
@@ -300,41 +298,38 @@ function ProfilePage() {
 								>
 									<Heart className="mr-2 h-4 w-4" /> Liked
 								</TabsTrigger>
-								<TabsTrigger
-									value="watched"
-									className="data-[state=active]:bg-white flex items-center"
-									onClick={() => setActiveTab("watched")}
-								>
-									<Film className="mr-2 h-4 w-4" /> Watched
-								</TabsTrigger>
 							</TabsList>
 
 							<TabsContent value="watchlist">
 								<h2 className="text-2xl font-bold mb-6">Your Watchlist</h2>
-								{watchlist.length > 0 ? (
-									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-										{movies.map((movie) => (
-											<MovieCard
-												key={movie.id}
-												movie={{
-													id: movie.id.toString(),
-													title: movie.title,
-													year: movie.year,
-													poster: movie.posterBase64 || "/placeholder.svg?height=450&width=300",
-													genres: movie.genres
-												}}
-											/>
-										))}
-									</div>
-								) : (
+								{isLoadingWatchlist ? (
 									<div className="text-center py-12">
-										<p className="text-gray-600">Your watchlist is empty.</p>
+										<p>Loading your watchlist...</p>
+									</div>
+								) : watchlistError || watchlistMovies.length === 0 ? (
+									<div className="text-center py-12">
+										<p className="text-gray-600">{watchlistError || "Your watchlist is empty."}</p>
 										<Button
 											asChild
 											className="mt-4 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
 										>
-											<Link href="/recommendations">Find Movies to Watch</Link>
+											<Link href="/movies">Find Movies to Watch</Link>
 										</Button>
+									</div>
+								) : (
+									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+										{watchlistMovies.map((movie) => (
+											<MovieCard
+												key={movie.id}
+												movie={{
+													id: movie.id,
+													title: movie.title,
+													year: movie.year,
+													poster: movie.posterBase64 || "/placeholder.svg?height=450&width=300",
+													genres: movie.genres || []
+												}}
+											/>
+										))}
 									</div>
 								)}
 							</TabsContent>
@@ -369,36 +364,6 @@ function ProfilePage() {
 												}}
 											/>
 										))}
-									</div>
-								)}
-							</TabsContent>
-
-							<TabsContent value="watched">
-								<h2 className="text-2xl font-bold mb-6">Movies You've Watched</h2>
-								{watched.length > 0 ? (
-									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-										{movies.map((movie) => (
-											<MovieCard
-												key={movie.id}
-												movie={{
-													id: movie.id.toString(),
-													title: movie.title,
-													year: movie.year,
-													poster: movie.posterBase64 || "/placeholder.svg?height=450&width=300",
-													genres: movie.genres
-												}}
-											/>
-										))}
-									</div>
-								) : (
-									<div className="text-center py-12">
-										<p className="text-gray-600">You haven't marked any movies as watched.</p>
-										<Button
-											asChild
-											className="mt-4 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
-										>
-											<Link href="/recommendations">Find Movies to Watch</Link>
-										</Button>
 									</div>
 								)}
 							</TabsContent>

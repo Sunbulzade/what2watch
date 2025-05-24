@@ -26,7 +26,54 @@ export default function MovieCard({ movie }: MovieCardProps) {
 	const { data: session } = useSession();
 	const { toast } = useToast();
 	const [isLiking, setIsLiking] = useState(false);
+	const [isAddingToWatchlist, setIsAddingToWatchlist] = useState(false);
 	
+	const handleAddToWatchlist = async () => {
+		if (!session) {
+			toast({
+				title: "Authentication required",
+				description: "You need to be logged in to add movies to your watchlist",
+				variant: "destructive",
+			});
+			return;
+		}
+		
+		try {
+			setIsAddingToWatchlist(true);
+			const response = await fetch("/api/user/add-to-watchlist", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ movieId: movie.id }),
+			});
+			
+			const data = await response.json();
+			
+			if (data.success) {
+				toast({
+					title: "Added to Watchlist",
+					description: "This movie has been added to your watchlist",
+					variant: "default",
+				});
+			} else {
+				toast({
+					title: "Error",
+					description: data.error || "Failed to add movie to watchlist",
+					variant: "destructive",
+				});
+			}
+		} catch (error) {
+			toast({
+				title: "Error",
+				description: "Something went wrong. Please try again later.",
+				variant: "destructive",
+			});
+		} finally {
+			setIsAddingToWatchlist(false);
+		}
+	};
+
 	const handleLikeMovie = async () => {
 		if (!session) {
 			toast({
@@ -117,7 +164,13 @@ export default function MovieCard({ movie }: MovieCardProps) {
 				<Button variant="outline" size="icon" className="border-gray-300 hover:bg-gray-100 hover:text-red-600">
 					<ThumbsDown className="h-4 w-4" />
 				</Button>
-				<Button variant="outline" size="icon" className="border-gray-300 hover:bg-gray-100 hover:text-purple-600">
+				<Button 
+					variant="outline" 
+					size="icon" 
+					className="border-gray-300 hover:bg-gray-100 hover:text-purple-600"
+					onClick={handleAddToWatchlist}
+					disabled={isAddingToWatchlist}
+				>
 					<Plus className="h-4 w-4" />
 				</Button>
 			</CardFooter>

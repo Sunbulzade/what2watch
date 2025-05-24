@@ -82,7 +82,6 @@ function MoviesPage() {
 	const [yearRange, setYearRange] = useState<[number, number]>([1970, 2025]);
 	const [favoriteMovies, setFavoriteMovies] = useState<string[]>([]);
 	const [favoriteMovie, setFavoriteMovie] = useState("");
-	const [selectedRating, setSelectedRating] = useState<number[]>([5]);
 
 	// Fetch movies from movie_posters table on component mount
 	useEffect(() => {
@@ -286,26 +285,6 @@ function MoviesPage() {
 											<div className="flex justify-between text-sm text-gray-500">
 												<span>{yearRange[0]}</span>
 												<span>{yearRange[1]}</span>
-											</div>
-										</div>
-									</div>
-
-									<div>
-										<h3 className="text-lg font-medium mb-2">Minimum Rating</h3>
-										<div className="px-2">
-											<Slider
-												defaultValue={[5]}
-												max={10}
-												min={0}
-												step={0.5}
-												value={selectedRating}
-												onValueChange={(value) => setSelectedRating(value)}
-												className="mb-2"
-											/>
-											<div className="flex justify-between text-sm text-gray-500">
-												<span>0</span>
-												<span>{selectedRating[0]}/10</span>
-												<span>10</span>
 											</div>
 										</div>
 									</div>
