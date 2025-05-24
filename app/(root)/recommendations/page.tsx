@@ -6,6 +6,7 @@ import { Search, Plus, Loader2, Send } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 
 // Imports - Local
 import MovieCard from "@/components/movie-card";
@@ -249,36 +250,12 @@ function RecommendationsPage() {
 					Movie Recommendations
 				</h1>
 
-				<Tabs defaultValue="search" className="w-full">
-					<TabsList className="grid w-full grid-cols-3 bg-gray-100 rounded-lg p-1">
-						<TabsTrigger value="search" className="data-[state=active]:bg-white">
-							Search
-						</TabsTrigger>
+				<Tabs defaultValue="chat" className="w-full">
+					<TabsList className="grid w-full grid-cols-1 bg-gray-100 rounded-lg p-1">
 						<TabsTrigger value="chat" className="data-[state=active]:bg-white">
 							Chat
 						</TabsTrigger>
-						<TabsTrigger value="guided" className="data-[state=active]:bg-white">
-							Guided
-						</TabsTrigger>
 					</TabsList>
-
-					<TabsContent value="search" className="mt-6">
-						<div className="flex gap-2 mb-8">
-							<Input
-								placeholder="Enter a movie title to search..."
-								value={searchQuery}
-								onChange={(e) => setSearchQuery(e.target.value)}
-								className="bg-white border-gray-300"
-							/>
-							<Button
-								onClick={handleSearch}
-								className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
-							>
-								{isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Search className="h-4 w-4 mr-2" />}
-								Search Movies
-							</Button>
-						</div>
-					</TabsContent>
 
 					<TabsContent value="chat" className="mt-6">
 						<Card className="bg-white border-gray-200">
@@ -424,70 +401,6 @@ function RecommendationsPage() {
 									<p className="text-xs text-gray-500 italic">
 										Press Enter to send, Shift+Enter for a new line. The AI will respond with suggestions for movies based on your interests.
 									</p>
-								</div>
-							</CardContent>
-						</Card>
-					</TabsContent>
-
-					<TabsContent value="guided" className="mt-6">
-						<Card className="bg-white border-gray-200">
-							<CardContent className="pt-6">
-								<div className="space-y-4">
-									<div>
-										<h3 className="text-lg font-medium mb-2">Preferred Genres</h3>
-										<div className="flex flex-wrap gap-2">
-											{[
-												"Action",
-												"Adventure",
-												"Comedy",
-												"Drama",
-												"Fantasy",
-												"Horror",
-												"Mystery",
-												"Romance",
-												"Sci-Fi",
-												"Thriller",
-											].map((genre) => (
-												<Button
-													key={genre}
-													variant="outline"
-													size="sm"
-													className="border-gray-300 hover:bg-gray-100 hover:text-purple-600"
-													onClick={() => {
-														setSearchQuery(genre);
-														handleSearch();
-													}}
-												>
-													{genre}
-												</Button>
-											))}
-										</div>
-									</div>
-
-									<div>
-										<h3 className="text-lg font-medium mb-2">Movies You've Enjoyed</h3>
-										<div className="flex gap-2 mb-2">
-											<Input placeholder="Enter a movie title..." className="bg-white border-gray-300" />
-											<Button variant="outline" size="icon" className="border-gray-300">
-												<Plus className="h-4 w-4" />
-											</Button>
-										</div>
-										<div className="flex flex-wrap gap-2">
-											<Button variant="secondary" size="sm" className="bg-gray-100 hover:bg-gray-200 text-gray-800">
-												Inception <span className="ml-2 text-xs">×</span>
-											</Button>
-											<Button variant="secondary" size="sm" className="bg-gray-100 hover:bg-gray-200 text-gray-800">
-												The Matrix <span className="ml-2 text-xs">×</span>
-											</Button>
-										</div>
-									</div>
-
-									<Button
-										className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
-										onClick={handleSearch}
-									>
-										Generate Recommendations
-									</Button>
 								</div>
 							</CardContent>
 						</Card>

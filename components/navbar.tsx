@@ -28,8 +28,6 @@ export default function Navbar() {
 		{ name: "Home", path: "/", icon: <Home className="h-5 w-5" /> },
 		{ name: "Recommendations", path: "/recommendations", icon: <Search className="h-5 w-5" /> },
 		{ name: "Movies", path: "/movies", icon: <Film className="h-5 w-5" /> },
-		// Only show profile if logged in
-		...(status === "authenticated" ? [{ name: "Profile", path: "/profile", icon: <User className="h-5 w-5" /> }] : []),
 	];
 
 	return (
