@@ -117,14 +117,19 @@ function MoviesPage() {
 
 	// Handler for search functionality
 	const handleSearch = async () => {
-		if (!searchQuery.trim() && selectedGenres.length === 0) return;
-
 		setIsLoading(true);
+		setError(null);
 		try {
 			const queryParams = new URLSearchParams();
 			
+			// Only add query param if search input is not empty
 			if (searchQuery.trim()) {
 				queryParams.append("query", searchQuery);
+			}
+			
+			// Add selected genres if any are selected
+			if (selectedGenres.length > 0) {
+				queryParams.append("genres", selectedGenres.join(','));
 			}
 			
 			queryParams.append("limit", "20");
@@ -140,11 +145,13 @@ function MoviesPage() {
 			if (data.success && data.movies.length > 0) {
 				setMovies(data.movies);
 			} else {
-				setError("No movies found matching your criteria");
+				setMovies([]);
+				setError("Sorry we can't find that movie.");
 			}
 		} catch (error) {
 			console.error("Error searching movies:", error);
 			setError("Failed to search movies. Please try again later.");
+			setMovies([]);
 		} finally {
 			setIsLoading(false);
 		}
@@ -198,6 +205,11 @@ function MoviesPage() {
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
 								className="bg-white border-gray-300"
+								onKeyDown={(e) => {
+									if (e.key === 'Enter') {
+										handleSearch();
+									}
+								}}
 							/>
 							<Button
 								onClick={handleSearch}
@@ -363,11 +375,13 @@ function MoviesPage() {
 				) : error ? (
 					<div className="text-center py-12">
 						<p className="text-red-500 mb-4">{error}</p>
-						<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-							{fallbackMovies.map((movie) => (
-								<MovieCard key={movie.id} movie={movie} />
-							))}
-						</div>
+						{error !== "Sorry we can't find that movie." && (
+							<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+								{fallbackMovies.map((movie) => (
+									<MovieCard key={movie.id} movie={movie} />
+								))}
+							</div>
+						)}
 					</div>
 				) : (
 					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

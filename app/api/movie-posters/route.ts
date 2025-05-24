@@ -18,13 +18,14 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const query = searchParams.get("query") || "";
     const limit = parseInt(searchParams.get("limit") || "12", 10);
+    const genres = searchParams.get("genres") || "";
     
     // Use a raw query to access the movie_posters table since it's not in the Prisma schema
     let movies: MoviePosterRaw[];
     
-    if (query) {
-      // Search for movies in movie_posters table matching the query
-      movies = await prisma.$queryRaw<MoviePosterRaw[]>`
+    if (query || genres) {
+      // Search for movies in movie_posters table matching the query or genres
+      let sqlQuery = `
         SELECT 
           row_idx as id, 
           id_tmdb, 
@@ -35,11 +36,30 @@ export async function GET(request: NextRequest) {
           runtime_min as runtime,
           genres
         FROM movie_posters
-        WHERE
-          title ILIKE ${`%${query}%`}
-        
-        
+        WHERE 1=1
       `;
+      
+      const params: any[] = [];
+      
+      if (query) {
+        sqlQuery += ` AND title ILIKE $${params.length + 1}`;
+        params.push(`%${query}%`);
+      }
+      
+      if (genres) {
+        // The genres in the database are stored as JSON array with objects that have a 'name' property
+        // We need to use a JSON containment check to find movies with specific genres
+        sqlQuery += ` AND genres::jsonb @> $${params.length + 1}::jsonb`;
+        
+        // Split the comma-separated genres and create a JSON array of objects with name property
+        const genresArray = genres.split(',').map(g => ({ name: g.trim() }));
+        params.push(JSON.stringify(genresArray));
+      }
+      
+      sqlQuery += ` LIMIT $${params.length + 1}`;
+      params.push(limit);
+      
+      movies = await prisma.$queryRawUnsafe(sqlQuery, ...params);
     } else {
       // Get top movies based on popularity
       movies = await prisma.$queryRaw<MoviePosterRaw[]>`
