@@ -1,7 +1,7 @@
 // Imports - Node
 import Link from "next/link";
 import Image from "next/image";
-import { ThumbsUp, ThumbsDown, Plus, Info } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Plus } from "lucide-react";
 
 // Imports - Local
 import { Badge } from "@/components/ui/badge";
@@ -51,7 +51,7 @@ export default function MovieCard({ movie }: MovieCardProps) {
 				)}
 			</CardContent>
 
-			<CardFooter className="p-4 pt-0 grid grid-cols-4 gap-2">
+			<CardFooter className="p-4 pt-0 flex justify-center space-x-4">
 				<Button variant="outline" size="icon" className="border-gray-300 hover:bg-gray-100 hover:text-green-600">
 					<ThumbsUp className="h-4 w-4" />
 				</Button>
@@ -60,11 +60,6 @@ export default function MovieCard({ movie }: MovieCardProps) {
 				</Button>
 				<Button variant="outline" size="icon" className="border-gray-300 hover:bg-gray-100 hover:text-purple-600">
 					<Plus className="h-4 w-4" />
-				</Button>
-				<Button asChild variant="outline" size="icon" className="border-gray-300 hover:bg-gray-100 hover:text-cyan-600">
-					<Link href={`/movies/${movie.id}`}>
-						<Info className="h-4 w-4" />
-					</Link>
 				</Button>
 			</CardFooter>
 		</Card>
