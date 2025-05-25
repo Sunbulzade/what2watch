@@ -298,6 +298,7 @@ function ProfilePage() {
 													poster: movie.posterBase64 || "/placeholder.svg?height=450&width=300",
 													genres: movie.genres || []
 												}}
+												hideWatchlistButton={true}
 											/>
 										))}
 									</div>
@@ -332,6 +333,7 @@ function ProfilePage() {
 													poster: movie.posterBase64 || "/placeholder.svg?height=450&width=300",
 													genres: movie.genres || []
 												}}
+												hideLikeButton={true}
 											/>
 										))}
 									</div>

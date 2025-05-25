@@ -32,7 +32,7 @@ async function generateMetadata(_props: Omit<Props, "children">, _parent: Resolv
 			template: "%s | What2Watch"
 		},
 		category: "E-Commerce",
-		creator: "Melihhan Fakir",
+		creator: "Melihhan Fakir | Adil Mustafa Yilmaz | Gulfem Kiziltan | Turgut Batuhan Balta | Oguz Kagan Kocak",
 		publisher: "Melmenware LLC",
 		generator: "Next.js",
 		referrer: "no-referrer-when-downgrade",

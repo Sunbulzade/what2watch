@@ -68,7 +68,7 @@ function RecommendationsPage() {
 	const [chatHistory, setChatHistory] = useState<Message[]>([{
 		id: "welcome-message",
 		content:
-			"Merhaba! Ben sizin film öneri asistanınızım. Sevdiğiniz filmler, izlemek istediğiniz türler veya aradığınız tarzda film önerileri hakkında bana bilgi verebilirsiniz. Size özel film önerileri sunmaktan memnuniyet duyarım!",
+			"Hello! I am your movie recommendation assistant. You can tell me about the films you like, the genres you are interested in, or the type of movies you are looking for. I’d be happy to offer you personalized movie suggestions!",
 		role: "assistant",
 		timestamp: new Date(),
 	},

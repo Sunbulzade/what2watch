@@ -20,9 +20,11 @@ interface MovieCardProps {
 		genres: string[];
 		reason?: string;
 	};
+	hideWatchlistButton?: boolean;
+	hideLikeButton?: boolean;
 }
 
-export default function MovieCard({ movie }: MovieCardProps) {
+export default function MovieCard({ movie, hideWatchlistButton = false, hideLikeButton = false }: MovieCardProps) {
 	const { data: session } = useSession();
 	const { toast } = useToast();
 	const [isLiking, setIsLiking] = useState(false);
@@ -152,27 +154,31 @@ export default function MovieCard({ movie }: MovieCardProps) {
 			</CardContent>
 
 			<CardFooter className="p-4 pt-0 flex justify-center space-x-4">
-				<Button 
-					variant="outline" 
-					size="icon" 
-					className="border-gray-300 hover:bg-gray-100 hover:text-green-600"
-					onClick={handleLikeMovie}
-					disabled={isLiking}
-				>
-					<ThumbsUp className="h-4 w-4" />
-				</Button>
+				{!hideLikeButton && (
+					<Button 
+						variant="outline" 
+						size="icon" 
+						className="border-gray-300 hover:bg-gray-100 hover:text-green-600"
+						onClick={handleLikeMovie}
+						disabled={isLiking}
+					>
+						<ThumbsUp className="h-4 w-4" />
+					</Button>
+				)}
 				<Button variant="outline" size="icon" className="border-gray-300 hover:bg-gray-100 hover:text-red-600">
 					<ThumbsDown className="h-4 w-4" />
 				</Button>
-				<Button 
-					variant="outline" 
-					size="icon" 
-					className="border-gray-300 hover:bg-gray-100 hover:text-purple-600"
-					onClick={handleAddToWatchlist}
-					disabled={isAddingToWatchlist}
-				>
-					<Plus className="h-4 w-4" />
-				</Button>
+				{!hideWatchlistButton && (
+					<Button 
+						variant="outline" 
+						size="icon" 
+						className="border-gray-300 hover:bg-gray-100 hover:text-purple-600"
+						onClick={handleAddToWatchlist}
+						disabled={isAddingToWatchlist}
+					>
+						<Plus className="h-4 w-4" />
+					</Button>
+				)}
 			</CardFooter>
 		</Card>
 	);
