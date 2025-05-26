@@ -62,6 +62,7 @@ async function LocaleLayout({ children }: Props): Promise<React.ReactNode> {
 						<Toaster />
 					</div>
 				</AuthProvider>
+				<Toaster />
 			</body>
 		</html >
 	);

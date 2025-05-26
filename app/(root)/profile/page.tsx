@@ -149,7 +149,6 @@ function ProfilePage() {
 	// Fetch liked movies when active tab changes to "liked"
 	useEffect(() => {
 		const fetchLikedMovies = async () => {
-			if (activeTab !== "liked" || !session) return;
 			
 			try {
 				setIsLoadingLiked(true);
@@ -178,6 +177,7 @@ function ProfilePage() {
 		
 		fetchLikedMovies();
 	}, [activeTab, session]);
+
 
 
 

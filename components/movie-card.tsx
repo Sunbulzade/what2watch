@@ -9,7 +9,7 @@ import { useSession } from "next-auth/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface MovieCardProps {
 	movie: {
@@ -158,7 +158,7 @@ export default function MovieCard({ movie, hideWatchlistButton = false, hideLike
 					<Button 
 						variant="outline" 
 						size="icon" 
-						className="border-gray-300 hover:bg-gray-100 hover:text-green-600"
+						className="border-gray-300 hover:bg-green-100 hover:text-green-600"
 						onClick={handleLikeMovie}
 						disabled={isLiking}
 					>
